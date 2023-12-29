@@ -3,69 +3,77 @@ Define Robot Manipulators or Industrial Robots in the form of DH Parameters for 
 Requires Arduino Eigen library as dependency found here:
 https://github.com/hideakitai/ArduinoEigen
 
-## RobotManipulator Class
+# RobotManipulator Class
 
-The `RobotManipulator` class is a C++ class designed for defining and manipulating the kinematics of industrial robots. It includes forward kinematics and inverse kinematics methods, supporting robots with up to 6 degrees of freedom (DOF). Requires Arduino Eigen library as dependency found here: https://github.com/hideakitai/ArduinoEigen
+## Overview
+The `RobotManipulator` class is designed for defining robot manipulators or industrial robots using Denavit-Hartenberg (DH) parameters. It provides functionality for forward kinematics and inverse kinematics using the Jacobian Transpose method. The class is designed to be compatible with the Arduino platform.
 
 ## Table of Contents
-
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [API Documentation](#api-documentation)
+- [RobotManipulator Class](#robotmanipulator-class)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Structs](#structs)
   - [Constructor](#constructor)
   - [Forward Kinematics](#forward-kinematics)
   - [Inverse Kinematics](#inverse-kinematics)
-  - [Private Methods](#private-methods)
-- [Usage Example](#usage-example)
-- [Contributing](#contributing)
-- [License](#license)
+  - [DH Parameters](#dh-parameters)
+  - [Installation](#installation)
+  - [Example Arduino Sketch](#example-arduino-sketch)
 
-## Introduction
+## Structs
+### `JointParameters`
+- `double a`: Link length
+- `double alpha`: Twist angle in radians
+- `double d`: Offset along the z-axis
+- `double theta`: Joint angle in radians
 
-The `RobotManipulator` class is designed to handle the kinematics of industrial robots, allowing users to perform forward and inverse kinematics calculations. It supports robots with up to 6 degrees of freedom.
+### `ForwardKinematicsResult`
+- `Eigen::Vector3d position`: End-effector position
+- `Eigen::Matrix3d orientation`: End-effector orientation
 
-## Installation
+### `InverseKinematicsResult`
+- `double jointAngles[6]`: Array of joint angles (assuming a maximum of 6 joints)
+- `bool success`: Indicates if the inverse kinematics computation was successful
 
-1. Copy the `robot_manipulator.h` and `robot_manipulator.cpp` files into your project.
-2. Make sure you have the ArduinoEigen library installed (https://github.com/hideakitai/ArduinoEigen).
-
-## API Documentation
-
-### Constructor
-
+## Constructor
 ```cpp
 RobotManipulator(const JointParameters joints[], int numJoints);
 ```
-
-The constructor initializes a RobotManipulator object with the specified joint parameters.
-
-    joints: An array of JointParameters structs defining the joint parameters of the robot.
-    numJoints: The number of joints in the robot.
+   ### Description:
+        Constructs an instance of the RobotManipulator class with the specified joint parameters for the robot.
+   ### Parameters:
+        joints: An array of JointParameters representing the robot's joints.
+        numJoints: Number of joints in the robot.
 
 ## Forward Kinematics
 
 ```cpp
-void forwardKinematics(const double jointAngles[]);
+ForwardKinematicsResult forwardKinematics(const double jointAngles[]);
 ```
-
-Computes and displays the end-effector position using the given joint angles.
-
-    jointAngles: An array of joint angles in radians.
+  ###  Parameters:
+        jointAngles: Array of joint angles for the robot.
+   ### Returns:
+        Returns a ForwardKinematicsResult struct containing the end-effector position and orientation.
 
 ## Inverse Kinematics
 
 ```cpp
-bool inverseKinematics(const Eigen::Vector3d& targetPosition, const Eigen::Matrix3d& targetOrientation,
-                        double jointAngles[], double tolerance = 1e-5, int maxIterations = 100);
+InverseKinematicsResult inverseKinematics(const Eigen::Vector3d& targetPosition,
+                                          const Eigen::Matrix3d& targetOrientation,
+                                          double tolerance = 1e-5, int maxIterations = 100);
 ```
 
-Computes the joint angles required to reach the specified end-effector pose using the Jacobian Transpose method.
+   ### Parameters:
+        targetPosition: Target end-effector position.
+        targetOrientation: Target end-effector orientation.
+        tolerance: Convergence tolerance for the inverse kinematics algorithm (default: 1e-5).
+        maxIterations: Maximum iterations for the inverse kinematics algorithm (default: 100).
+   ### Returns:
+        Returns an InverseKinematicsResult struct containing the computed joint angles and a success flag.
 
-    - targetPosition: The target position of the end-effector.
-    - targetOrientation: The target orientation of the end-effector.
-    - jointAngles: An array to store the computed joint angles.
-    - tolerance: The convergence tolerance for the inverse kinematics algorithm (default is 1e-5).
-    - maxIterations: The maximum number of iterations for convergence (default is 100).
+## DH Parameters
+
+The class uses the Denavit-Hartenberg (DH) convention for defining robot kinematics. The JointParameters struct contains the DH parameters for each joint.
 
 ## Private Methods
 
@@ -88,30 +96,70 @@ bool isConverged(const Eigen::VectorXd& error, double tolerance);
 
     Checks if the difference between two vectors is below a specified tolerance, indicating convergence.
 
-## Usage Example
+## Installation
+
+   1. Include the robot_manipulator.h and robot_manipulator.cpp files in your Arduino project.
+   2. Ensure that the required libraries (Eigen and ArduinoEigen) are properly installed.
+
+
+## Usage: Example Arduino Sketch
 
 ```cpp
 #include "robot_manipulator.h"
 
 // Define joint parameters for a 3-DOF robot
-JointParameters joints[] = {
+JointParameters robotJoints[] = {
     {1.0, 0.0, 0.0, 0.0},
     {2.0, 0.0, 0.0, 0.0},
     {1.0, 0.0, 0.0, 0.0}
 };
 
-// Instantiate RobotManipulator
-RobotManipulator robot(joints, 3);
+// Instantiate RobotManipulator for the robot
+RobotManipulator robot(robotJoints, 3);
 
-// Perform forward kinematics
-double jointAngles[] = {0.1, 0.2, 0.3};
-robot.forwardKinematics(jointAngles);
+void setup() {
+    Serial.begin(9600);
+    delay(1000);
 
-// Perform inverse kinematics
-Eigen::Vector3d targetPosition(2.0, 1.0, 0.5);
-Eigen::Matrix3d targetOrientation = Eigen::Matrix3d::Identity();
-robot.inverseKinematics(targetPosition, targetOrientation, jointAngles);
+    // Example: Forward Kinematics
+    double jointAngles[] = {0.1, 0.2, 0.3};
+    ForwardKinematicsResult fkResult = robot.forwardKinematics(jointAngles);
+    
+    // Print results
+    Serial.println("Forward Kinematics Result:");
+    Serial.print("Position: ");
+    Serial.print(fkResult.position.transpose());
+    Serial.println();
+    Serial.println("Orientation:");
+    Serial.print(fkResult.orientation);
+    Serial.println();
+    
+    // Example: Inverse Kinematics
+    Eigen::Vector3d targetPosition(2.0, 1.0, 0.5);
+    Eigen::Matrix3d targetOrientation = Eigen::Matrix3d::Identity();
+    InverseKinematicsResult ikResult = robot.inverseKinematics(targetPosition, targetOrientation);
+
+    // Print results
+    Serial.println("Inverse Kinematics Result:");
+    if (ikResult.success) {
+        Serial.print("Computed Joint Angles: ");
+        for (int i = 0; i < 3; ++i) {
+            Serial.print(ikResult.jointAngles[i], 4);
+            if (i < 2) Serial.print(", ");
+        }
+        Serial.println();
+    } else {
+        Serial.println("Inverse Kinematics did not converge.");
+    }
+}
+
+void loop() {
+    // Nothing to do in the loop
+}
+
 ```
+This example demonstrates the usage of the RobotManipulator class with a 3-DOF robot, performing both forward kinematics and inverse kinematics.
+
 
 ## Contributing 
 Feel free to contribute by opening issues or pull requests. Your feedback and contributions are welcome!
