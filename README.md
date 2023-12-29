@@ -22,39 +22,39 @@ The `RobotManipulator` class is designed for defining robot manipulators or indu
   - [Example Arduino Sketch](#example-arduino-sketch)
 
 ## Structs
-### `JointParameters`
-- `double a`: Link length
-- `double alpha`: Twist angle in radians
-- `double d`: Offset along the z-axis
-- `double theta`: Joint angle in radians
+### JointParameters
+- double a: Link length
+- double alpha: Twist angle in radians
+- double d: Offset along the z-axis
+- double theta: Joint angle in radians
 
-### `ForwardKinematicsResult`
-- `Eigen::Vector3d position`: End-effector position
-- `Eigen::Matrix3d orientation`: End-effector orientation
+### ForwardKinematicsResult
+- Eigen::Vector3d position: End-effector position
+- Eigen::Matrix3d orientation: End-effector orientation
 
-### `InverseKinematicsResult`
-- `double jointAngles[6]`: Array of joint angles (assuming a maximum of 6 joints)
-- `bool success`: Indicates if the inverse kinematics computation was successful
+### InverseKinematicsResult
+- double jointAngles[6]: Array of joint angles (assuming a maximum of 6 joints)
+- bool success: Indicates if the inverse kinematics computation was successful
 
 ## Constructor
 ```cpp
 RobotManipulator(const JointParameters joints[], int numJoints);
 ```
-   ### Description:
-        Constructs an instance of the RobotManipulator class with the specified joint parameters for the robot.
-   ### Parameters:
-        joints: An array of JointParameters representing the robot's joints.
-        numJoints: Number of joints in the robot.
+### Description:
+Constructs an instance of the RobotManipulator class with the specified joint parameters for the robot.
+### Parameters:
+- joints: An array of JointParameters representing the robot's joints.
+- numJoints: Number of joints in the robot.
 
 ## Forward Kinematics
 
 ```cpp
 ForwardKinematicsResult forwardKinematics(const double jointAngles[]);
 ```
-  ###  Parameters:
-        jointAngles: Array of joint angles for the robot.
-   ### Returns:
-        Returns a ForwardKinematicsResult struct containing the end-effector position and orientation.
+###  Parameters:
+jointAngles: Array of joint angles for the robot.
+### Returns:
+Returns a ForwardKinematicsResult struct containing the end-effector position and orientation.
 
 ## Inverse Kinematics
 
@@ -64,12 +64,12 @@ InverseKinematicsResult inverseKinematics(const Eigen::Vector3d& targetPosition,
                                           double tolerance = 1e-5, int maxIterations = 100);
 ```
 
-   ### Parameters:
-        targetPosition: Target end-effector position.
-        targetOrientation: Target end-effector orientation.
-        tolerance: Convergence tolerance for the inverse kinematics algorithm (default: 1e-5).
-        maxIterations: Maximum iterations for the inverse kinematics algorithm (default: 100).
-   ### Returns:
+### Parameters:
+- targetPosition: Target end-effector position.
+- targetOrientation: Target end-effector orientation.
+- tolerance: Convergence tolerance for the inverse kinematics algorithm (default: 1e-5).
+- maxIterations: Maximum iterations for the inverse kinematics algorithm (default: 100).
+### Returns:
         Returns an InverseKinematicsResult struct containing the computed joint angles and a success flag.
 
 ## DH Parameters
@@ -83,35 +83,35 @@ These methods are used internally for computation and are not intended for direc
 ```cpp
 void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
 ```
-   ### Description:
-        Computes a transformation matrix for a given set of DH parameters.
-   ### Parameters:
-        transform: Reference to the matrix to store the computed transformation.
-        a: Link length.
-        alpha: Twist angle in radians.
-        d: Offset along the z-axis.
-        theta: Joint angle in radians.
+### Description:
+Computes a transformation matrix for a given set of DH parameters.
+### Parameters:
+- transform: Reference to the matrix to store the computed transformation.
+- a: Link length.
+- alpha: Twist angle in radians.
+- d: Offset along the z-axis.
+- theta: Joint angle in radians.
 
 ```cpp
 void computeJacobian(const Eigen::Vector3d& endEffectorPosition, const Eigen::Matrix3d& endEffectorOrientation, Eigen::MatrixXd& jacobian);
 ```
 
-   ### Description:
-        Computes the Jacobian matrix.
-   ### Parameters:
-        endEffectorPosition: End-effector position.
-        endEffectorOrientation: End-effector orientation.
-        jacobian: Reference to the matrix to store the computed Jacobian.
+### Description:
+Computes the Jacobian matrix.
+### Parameters:
+endEffectorPosition: End-effector position.
+endEffectorOrientation: End-effector orientation.
+jacobian: Reference to the matrix to store the computed Jacobian.
 
 ```cpp
 bool isConverged(const Eigen::VectorXd& error, double tolerance);
 ```
 
-   ### Description:
-        Checks if the difference between two vectors is below a certain tolerance.
-   ### Parameters:
-        error: Vector representing the difference between two vectors.
-        tolerance: Tolerance threshold for convergence.
+### Description:
+Checks if the difference between two vectors is below a certain tolerance.
+### Parameters:
+error: Vector representing the difference between two vectors.
+tolerance: Tolerance threshold for convergence.
 
 ## Installation
 
