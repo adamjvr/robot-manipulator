@@ -25,7 +25,11 @@ SOFTWARE.
 #ifndef ROBOT_MANIPULATOR_H
 #define ROBOT_MANIPULATOR_H
 
-#include <ArduinoEigen.h>  // Include ArduinoEigen library for matrix operations
+// Include ArduinoEigen library for matrix operations
+#include <ArduinoEigen.h>
+
+// Include Arduino.h for standard Arduino math functions
+#include <Arduino.h>
 
 // Struct to define joint parameters
 struct JointParameters {
@@ -63,3 +67,4 @@ private:
 };
 
 #endif // ROBOT_MANIPULATOR_H
+
