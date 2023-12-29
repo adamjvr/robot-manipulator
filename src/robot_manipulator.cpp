@@ -23,7 +23,6 @@ SOFTWARE.
 */
 
 #include "robot_manipulator.h"
-#include <Arduino.h>
 
 // Constructor implementation
 RobotManipulator::RobotManipulator(const JointParameters joints[], int numJoints)
@@ -38,7 +37,8 @@ RobotManipulator::RobotManipulator(const JointParameters joints[], int numJoints
 }
 
 // Forward kinematics implementation
-void RobotManipulator::forwardKinematics(const double jointAngles[]) {
+ForwardKinematicsResult RobotManipulator::forwardKinematics(const double jointAngles[]) {
+    ForwardKinematicsResult result;
     Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
 
     // Iterate through each joint
@@ -51,36 +51,33 @@ void RobotManipulator::forwardKinematics(const double jointAngles[]) {
     }
 
     // Extract position and orientation from the resulting matrix
-    Eigen::Vector3d position = transform.block<3, 1>(0, 3);
-    Eigen::Matrix3d rotation = transform.block<3, 3>(0, 0);
+    result.position = transform.block<3, 1>(0, 3);
+    result.orientation = transform.block<3, 3>(0, 0);
 
-    // Display the results
-    Serial.print("Forward Kinematics - End-Effector Position: ");
-    Serial.print("X: "); Serial.print(position[0]); Serial.print(", ");
-    Serial.print("Y: "); Serial.print(position[1]); Serial.print(", ");
-    Serial.print("Z: "); Serial.println(position[2]);
+    return result;
 }
 
 // Inverse kinematics using Jacobian Transpose method
-bool RobotManipulator::inverseKinematics(const Eigen::Vector3d& targetPosition,
-                                         const Eigen::Matrix3d& targetOrientation,
-                                         double jointAngles[],
-                                         double tolerance, int maxIterations) {
+InverseKinematicsResult RobotManipulator::inverseKinematics(const Eigen::Vector3d& targetPosition,
+                                                            const Eigen::Matrix3d& targetOrientation,
+                                                            double tolerance, int maxIterations) {
+    InverseKinematicsResult result;
     Eigen::Vector3d endEffectorPosition;
     Eigen::Matrix3d endEffectorOrientation;
     Eigen::MatrixXd jacobian(6, numJoints_);
     Eigen::VectorXd error(6);
 
+    // Initialize result
+    result.success = false;
+
     // Iterate through the maximum number of iterations
     for (int iteration = 0; iteration < maxIterations; ++iteration) {
         // Perform forward kinematics to compute current end-effector pose
-        forwardKinematics(jointAngles);
+        ForwardKinematicsResult fkResult = forwardKinematics(result.jointAngles);
 
         // Compute error in position and orientation
-        endEffectorPosition = Eigen::Vector3d(jointParams_[numJoints_ - 1].a, 0, 0);
-        endEffectorPosition = jointParams_[numJoints_ - 1].a * Eigen::Vector3d::UnitX();
-        endEffectorPosition = jointParams_[numJoints_ - 1].a * Eigen::Vector3d::UnitX();
-        endEffectorOrientation = Eigen::Matrix3d::Identity();
+        endEffectorPosition = fkResult.position;
+        endEffectorOrientation = fkResult.orientation;
 
         error.block<3, 1>(0, 0) = targetPosition - endEffectorPosition;
         error.block<3, 1>(3, 0) = 0.5 * (targetOrientation.col(0).cross(endEffectorOrientation.col(0)) +
@@ -89,24 +86,23 @@ bool RobotManipulator::inverseKinematics(const Eigen::Vector3d& targetPosition,
 
         // Check convergence
         if (isConverged(error, tolerance)) {
-            Serial.println("Inverse Kinematics - Converged!");
-            return true;
+            result.success = true;
+            return result;
         }
 
         // Compute Jacobian
         computeJacobian(endEffectorPosition, endEffectorOrientation, jacobian);
 
         // Update joint angles using Jacobian Transpose method
-        jointAngles += jacobian.transpose() * error;
+        result.jointAngles += jacobian.transpose() * error;
 
         // Constrain joint angles to [-pi, pi]
         for (int i = 0; i < numJoints_; ++i) {
-            jointAngles[i] = fmod(jointAngles[i] + M_PI, 2 * M_PI) - M_PI;
+            result.jointAngles[i] = fmod(result.jointAngles[i] + M_PI, 2 * M_PI) - M_PI;
         }
     }
 
-    Serial.println("Inverse Kinematics - Did not converge within max iterations!");
-    return false;
+    return result;
 }
 
 // Function to compute a transformation matrix for a given set of DH parameters

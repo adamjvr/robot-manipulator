@@ -25,10 +25,7 @@ SOFTWARE.
 #ifndef ROBOT_MANIPULATOR_H
 #define ROBOT_MANIPULATOR_H
 
-// Include ArduinoEigen library for matrix operations
 #include <ArduinoEigen.h>
-
-// Include Arduino.h for standard Arduino math functions
 #include <Arduino.h>
 
 // Struct to define joint parameters
@@ -39,17 +36,30 @@ struct JointParameters {
     double theta;  // Joint angle in radians
 };
 
+// Struct to store forward kinematics result
+struct ForwardKinematicsResult {
+    Eigen::Vector3d position;     // End-effector position
+    Eigen::Matrix3d orientation;  // End-effector orientation
+};
+
+// Struct to store inverse kinematics result
+struct InverseKinematicsResult {
+    double jointAngles[6];  // Joint angles (assuming a maximum of 6 joints)
+    bool success;           // Indicates if the inverse kinematics computation was successful
+};
+
 class RobotManipulator {
 public:
     // Constructor
     RobotManipulator(const JointParameters joints[], int numJoints);
 
     // Forward kinematics
-    void forwardKinematics(const double jointAngles[]);
+    ForwardKinematicsResult forwardKinematics(const double jointAngles[]);
 
     // Inverse kinematics using Jacobian Transpose method
-    bool inverseKinematics(const Eigen::Vector3d& targetPosition, const Eigen::Matrix3d& targetOrientation,
-                           double jointAngles[], double tolerance = 1e-5, int maxIterations = 100);
+    InverseKinematicsResult inverseKinematics(const Eigen::Vector3d& targetPosition,
+                                              const Eigen::Matrix3d& targetOrientation,
+                                              double tolerance = 1e-5, int maxIterations = 100);
 
 private:
     int numJoints_;               // Number of joints
@@ -59,7 +69,8 @@ private:
     void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
 
     // Function to compute the Jacobian matrix
-    void computeJacobian(const Eigen::Vector3d& endEffectorPosition, const Eigen::Matrix3d& endEffectorOrientation,
+    void computeJacobian(const Eigen::Vector3d& endEffectorPosition,
+                         const Eigen::Matrix3d& endEffectorOrientation,
                          Eigen::MatrixXd& jacobian);
 
     // Function to check if the difference between two vectors is below a certain tolerance
@@ -67,4 +78,3 @@ private:
 };
 
 #endif // ROBOT_MANIPULATOR_H
-
