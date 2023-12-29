@@ -17,6 +17,7 @@ The `RobotManipulator` class is designed for defining robot manipulators or indu
   - [Forward Kinematics](#forward-kinematics)
   - [Inverse Kinematics](#inverse-kinematics)
   - [DH Parameters](#dh-parameters)
+  - [Private Methods](#private-methods)
   - [Installation](#installation)
   - [Example Arduino Sketch](#example-arduino-sketch)
 
@@ -82,19 +83,35 @@ These methods are used internally for computation and are not intended for direc
 ```cpp
 void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
 ```
-    Computes a transformation matrix for a given set of Denavit-Hartenberg (DH) parameters.
+   ### Description:
+        Computes a transformation matrix for a given set of DH parameters.
+   ### Parameters:
+        transform: Reference to the matrix to store the computed transformation.
+        a: Link length.
+        alpha: Twist angle in radians.
+        d: Offset along the z-axis.
+        theta: Joint angle in radians.
 
 ```cpp
 void computeJacobian(const Eigen::Vector3d& endEffectorPosition, const Eigen::Matrix3d& endEffectorOrientation, Eigen::MatrixXd& jacobian);
 ```
 
-    Computes the Jacobian matrix for a given end-effector position and orientation.
+   ### Description:
+        Computes the Jacobian matrix.
+   ### Parameters:
+        endEffectorPosition: End-effector position.
+        endEffectorOrientation: End-effector orientation.
+        jacobian: Reference to the matrix to store the computed Jacobian.
 
 ```cpp
 bool isConverged(const Eigen::VectorXd& error, double tolerance);
 ```
 
-    Checks if the difference between two vectors is below a specified tolerance, indicating convergence.
+   ### Description:
+        Checks if the difference between two vectors is below a certain tolerance.
+   ### Parameters:
+        error: Vector representing the difference between two vectors.
+        tolerance: Tolerance threshold for convergence.
 
 ## Installation
 
@@ -102,7 +119,7 @@ bool isConverged(const Eigen::VectorXd& error, double tolerance);
    2. Ensure that the required libraries (Eigen and ArduinoEigen) are properly installed.
 
 
-## Usage: Example Arduino Sketch
+## Example Arduino Sketch
 
 ```cpp
 #include "robot_manipulator.h"
