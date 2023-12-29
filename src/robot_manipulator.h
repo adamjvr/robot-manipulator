@@ -25,29 +25,41 @@ SOFTWARE.
 #ifndef ROBOT_MANIPULATOR_H
 #define ROBOT_MANIPULATOR_H
 
-#include <ArduinoEigen.h>
+#include <ArduinoEigen.h>  // Include ArduinoEigen library for matrix operations
+
+// Struct to define joint parameters
+struct JointParameters {
+    double a;      // Link length
+    double alpha;  // Twist angle in radians
+    double d;      // Offset along the z-axis
+    double theta;  // Joint angle in radians
+};
 
 class RobotManipulator {
 public:
     // Constructor
-    RobotManipulator(double a1, double alpha1, double d1,
-                     double a2, double alpha2, double d2,
-                     double a3, double alpha3, double d3);
+    RobotManipulator(const JointParameters joints[], int numJoints);
 
     // Forward kinematics
-    void forwardKinematics(double theta1, double theta2, double theta3);
+    void forwardKinematics(const double jointAngles[]);
 
-    // Inverse kinematics
-    bool inverseKinematics(double x, double y, double z, double& theta1, double& theta2, double& theta3);
+    // Inverse kinematics using Jacobian Transpose method
+    bool inverseKinematics(const Eigen::Vector3d& targetPosition, const Eigen::Matrix3d& targetOrientation,
+                           double jointAngles[], double tolerance = 1e-5, int maxIterations = 100);
 
 private:
-    // Denavit-Hartenberg parameters
-    double a1_, alpha1_, d1_;
-    double a2_, alpha2_, d2_;
-    double a3_, alpha3_, d3_;
+    int numJoints_;               // Number of joints
+    JointParameters* jointParams_; // Array to store joint parameters
 
     // Function to compute a transformation matrix for a given set of DH parameters
     void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
+
+    // Function to compute the Jacobian matrix
+    void computeJacobian(const Eigen::Vector3d& endEffectorPosition, const Eigen::Matrix3d& endEffectorOrientation,
+                         Eigen::MatrixXd& jacobian);
+
+    // Function to check if the difference between two vectors is below a certain tolerance
+    bool isConverged(const Eigen::VectorXd& error, double tolerance);
 };
 
 #endif // ROBOT_MANIPULATOR_H

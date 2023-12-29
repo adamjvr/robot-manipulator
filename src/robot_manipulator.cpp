@@ -24,31 +24,35 @@ SOFTWARE.
 
 #include "robot_manipulator.h"
 #include <Arduino.h>
-#include <Eigen.h>
 
 // Constructor implementation
-RobotManipulator::RobotManipulator(double a1, double alpha1, double d1,
-                                   double a2, double alpha2, double d2,
-                                   double a3, double alpha3, double d3)
-    : a1_(a1), alpha1_(alpha1), d1_(d1),
-      a2_(a2), alpha2_(alpha2), d2_(d2),
-      a3_(a3), alpha3_(alpha3), d3_(d3) {}
+RobotManipulator::RobotManipulator(const JointParameters joints[], int numJoints)
+    : numJoints_(numJoints) {
+    // Allocate memory for joint parameters
+    jointParams_ = new JointParameters[numJoints_];
+
+    // Copy joint parameters
+    for (int i = 0; i < numJoints_; ++i) {
+        jointParams_[i] = joints[i];
+    }
+}
 
 // Forward kinematics implementation
-void RobotManipulator::forwardKinematics(double theta1, double theta2, double theta3) {
-    Eigen::Matrix4d T01, T12, T23, T03;
+void RobotManipulator::forwardKinematics(const double jointAngles[]) {
+    Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
 
-    // Compute transformation matrices
-    computeTransform(T01, a1_, alpha1_, d1_, theta1);
-    computeTransform(T12, a2_, alpha2_, d2_, theta2);
-    computeTransform(T23, a3_, alpha3_, d3_, theta3);
-
-    // Combine transformations to get end-effector pose
-    T03 = T01 * T12 * T23;
+    // Iterate through each joint
+    for (int i = 0; i < numJoints_; ++i) {
+        Eigen::Matrix4d tempTransform;
+        // Compute the transformation matrix for the current joint
+        computeTransform(tempTransform, jointParams_[i].a, jointParams_[i].alpha, jointParams_[i].d, jointAngles[i]);
+        // Multiply the transformation matrix with the cumulative transformation
+        transform = transform * tempTransform;
+    }
 
     // Extract position and orientation from the resulting matrix
-    Eigen::Vector3d position = T03.block<3, 1>(0, 3);
-    Eigen::Matrix3d rotation = T03.block<3, 3>(0, 0);
+    Eigen::Vector3d position = transform.block<3, 1>(0, 3);
+    Eigen::Matrix3d rotation = transform.block<3, 3>(0, 0);
 
     // Display the results
     Serial.print("Forward Kinematics - End-Effector Position: ");
@@ -57,49 +61,99 @@ void RobotManipulator::forwardKinematics(double theta1, double theta2, double th
     Serial.print("Z: "); Serial.println(position[2]);
 }
 
-// Inverse kinematics implementation
-bool RobotManipulator::inverseKinematics(double x, double y, double z, double& theta1, double& theta2, double& theta3) {
-    // Compute joint angles for a simple 3-DOF robot
-    Eigen::Matrix4d T01, T12, T23, T03;
+// Inverse kinematics using Jacobian Transpose method
+bool RobotManipulator::inverseKinematics(const Eigen::Vector3d& targetPosition,
+                                         const Eigen::Matrix3d& targetOrientation,
+                                         double jointAngles[],
+                                         double tolerance, int maxIterations) {
+    Eigen::Vector3d endEffectorPosition;
+    Eigen::Matrix3d endEffectorOrientation;
+    Eigen::MatrixXd jacobian(6, numJoints_);
+    Eigen::VectorXd error(6);
 
-    // Joint 1 angle (theta1)
-    theta1 = atan2(y, x);
+    // Iterate through the maximum number of iterations
+    for (int iteration = 0; iteration < maxIterations; ++iteration) {
+        // Perform forward kinematics to compute current end-effector pose
+        forwardKinematics(jointAngles);
 
-    // Joint 3 angle (theta3)
-    double c3 = (x*x + y*y + (z - d1_)*(z - d1_) - a2_*a2_ - a3_*a3_) / (2*a2_*a3_);
-    double s3 = sqrt(1 - c3*c3);
+        // Compute error in position and orientation
+        endEffectorPosition = Eigen::Vector3d(jointParams_[numJoints_ - 1].a, 0, 0);
+        endEffectorPosition = jointParams_[numJoints_ - 1].a * Eigen::Vector3d::UnitX();
+        endEffectorPosition = jointParams_[numJoints_ - 1].a * Eigen::Vector3d::UnitX();
+        endEffectorOrientation = Eigen::Matrix3d::Identity();
 
-    // Check for the existence of a solution
-    if (isnan(s3)) {
-        Serial.println("Inverse Kinematics - No solution found!");
-        return false;
+        error.block<3, 1>(0, 0) = targetPosition - endEffectorPosition;
+        error.block<3, 1>(3, 0) = 0.5 * (targetOrientation.col(0).cross(endEffectorOrientation.col(0)) +
+                                         targetOrientation.col(1).cross(endEffectorOrientation.col(1)) +
+                                         targetOrientation.col(2).cross(endEffectorOrientation.col(2)));
+
+        // Check convergence
+        if (isConverged(error, tolerance)) {
+            Serial.println("Inverse Kinematics - Converged!");
+            return true;
+        }
+
+        // Compute Jacobian
+        computeJacobian(endEffectorPosition, endEffectorOrientation, jacobian);
+
+        // Update joint angles using Jacobian Transpose method
+        jointAngles += jacobian.transpose() * error;
+
+        // Constrain joint angles to [-pi, pi]
+        for (int i = 0; i < numJoints_; ++i) {
+            jointAngles[i] = fmod(jointAngles[i] + M_PI, 2 * M_PI) - M_PI;
+        }
     }
 
-    theta3 = atan2(s3, c3);
-
-    // Joint 2 angle (theta2)
-    double beta = atan2((z - d1_), sqrt(x*x + y*y));
-    double alpha = atan2((a3_*s3), (a2_ + a3_*c3));
-    theta2 = M_PI_2 - alpha - beta;
-
-    // Display the results
-    Serial.print("Inverse Kinematics - Joint Angles: ");
-    Serial.print("Theta1: "); Serial.print(theta1); Serial.print(", ");
-    Serial.print("Theta2: "); Serial.print(theta2); Serial.print(", ");
-    Serial.print("Theta3: "); Serial.println(theta3);
-
-    return true;
+    Serial.println("Inverse Kinematics - Did not converge within max iterations!");
+    return false;
 }
 
-// Compute transformation matrix implementation
+// Function to compute a transformation matrix for a given set of DH parameters
 void RobotManipulator::computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta) {
     double cTheta = cos(theta);
     double sTheta = sin(theta);
     double cAlpha = cos(alpha);
     double sAlpha = sin(alpha);
 
+    // Populate the transformation matrix using DH parameters
     transform << cTheta, -sTheta * cAlpha, sTheta * sAlpha, a * cTheta,
                  sTheta, cTheta * cAlpha, -cTheta * sAlpha, a * sTheta,
                  0, sAlpha, cAlpha, d,
                  0, 0, 0, 1;
+}
+
+// Function to compute the Jacobian matrix
+void RobotManipulator::computeJacobian(const Eigen::Vector3d& endEffectorPosition,
+                                       const Eigen::Matrix3d& endEffectorOrientation,
+                                       Eigen::MatrixXd& jacobian) {
+    Eigen::Vector3d jointPosition;
+    Eigen::Matrix3d jointOrientation;
+
+    Eigen::Vector3d zAxis;
+    Eigen::Vector3d jointAxis;
+
+    // Iterate through each joint to compute Jacobian columns
+    for (int i = 0; i < numJoints_; ++i) {
+        // Compute joint position and orientation
+        jointPosition = Eigen::Vector3d(jointParams_[i].a, 0, 0);
+        jointOrientation = Eigen::Matrix3d::Identity();
+
+        // Compute joint axis in the global frame
+        zAxis = jointOrientation.col(2);
+        jointAxis = zAxis.cross(endEffectorPosition - jointPosition);
+
+        // Populate the translational part of the Jacobian
+        jacobian.block<3, 1>(0, i) = jointAxis;
+        // Populate the rotational part of the Jacobian
+        jacobian.block<3, 1>(3, i) = zAxis;
+    }
+}
+
+// Function to check if the difference between two vectors is below a certain tolerance
+bool RobotManipulator::isConverged(const Eigen::VectorXd& error, double tolerance) {
+    // Compute the Euclidean norm of the error vector
+    double norm = error.norm();
+    // Check if the norm is below the specified tolerance
+    return (norm < tolerance);
 }
