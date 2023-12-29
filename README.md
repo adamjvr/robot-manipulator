@@ -52,9 +52,9 @@ Constructs an instance of the RobotManipulator class with the specified joint pa
 ForwardKinematicsResult forwardKinematics(const double jointAngles[]);
 ```
 ###  Parameters:
-jointAngles: Array of joint angles for the robot.
+- jointAngles: Array of joint angles for the robot.
 ### Returns:
-Returns a ForwardKinematicsResult struct containing the end-effector position and orientation.
+- Returns a ForwardKinematicsResult struct containing the end-effector position and orientation.
 
 ## Inverse Kinematics
 
@@ -70,7 +70,7 @@ InverseKinematicsResult inverseKinematics(const Eigen::Vector3d& targetPosition,
 - tolerance: Convergence tolerance for the inverse kinematics algorithm (default: 1e-5).
 - maxIterations: Maximum iterations for the inverse kinematics algorithm (default: 100).
 ### Returns:
-        Returns an InverseKinematicsResult struct containing the computed joint angles and a success flag.
+- Returns an InverseKinematicsResult struct containing the computed joint angles and a success flag.
 
 ## DH Parameters
 
@@ -99,9 +99,9 @@ void computeJacobian(const Eigen::Vector3d& endEffectorPosition, const Eigen::Ma
 ### Description:
 Computes the Jacobian matrix.
 ### Parameters:
-endEffectorPosition: End-effector position.
-endEffectorOrientation: End-effector orientation.
-jacobian: Reference to the matrix to store the computed Jacobian.
+- endEffectorPosition: End-effector position.
+- endEffectorOrientation: End-effector orientation.
+- jacobian: Reference to the matrix to store the computed Jacobian.
 
 ```cpp
 bool isConverged(const Eigen::VectorXd& error, double tolerance);
