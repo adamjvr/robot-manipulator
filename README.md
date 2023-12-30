@@ -173,7 +173,6 @@ void setup() {
 void loop() {
     // Nothing to do in the loop
 }
-
 ```
 This example demonstrates the usage of the RobotManipulator class with a 3-DOF robot, performing both forward kinematics and inverse kinematics.
 
