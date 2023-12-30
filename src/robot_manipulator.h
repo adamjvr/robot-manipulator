@@ -25,8 +25,7 @@ SOFTWARE.
 #ifndef ROBOT_MANIPULATOR_H
 #define ROBOT_MANIPULATOR_H
 
-#include <ArduinoEigen.h>
-#include <Arduino.h>
+#include <Eigen.h>
 
 // Struct to define joint parameters
 struct JointParameters {
@@ -66,12 +65,12 @@ private:
     JointParameters* jointParams_; // Array to store joint parameters
 
     // Function to compute a transformation matrix for a given set of DH parameters
-    void computeTransform(ArduinoEigen::Matrix4d& transform, double a, double alpha, double d, double theta);
+    void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
 
     // Function to compute the Jacobian matrix
     void computeJacobian(const Eigen::Vector3d& endEffectorPosition,
                          const Eigen::Matrix3d& endEffectorOrientation,
-                         ArduinoEigen::MatrixXd& jacobian);
+                         Eigen::MatrixXd& jacobian);
 
     // Function to check if the difference between two vectors is below a certain tolerance
     bool isConverged(const Eigen::VectorXd& error, double tolerance);
