@@ -122,57 +122,77 @@ Checks if the difference between two vectors is below a certain tolerance.
 ## Example Arduino Sketch
 
 ```cpp
+#include <ArduinoEigen.h>
 #include "robot_manipulator.h"
 
-// Define joint parameters for a 3-DOF robot
-JointParameters robotJoints[] = {
-    {1.0, 0.0, 0.0, 0.0},
-    {2.0, 0.0, 0.0, 0.0},
-    {1.0, 0.0, 0.0, 0.0}
-};
-
-// Instantiate RobotManipulator for the robot
-RobotManipulator robot(robotJoints, 3);
+void printMatrix(const Eigen::Matrix3d& mat) {
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      Serial.print(mat(i, j));
+      Serial.print("\t");
+    }
+    Serial.println();
+  }
+}
 
 void setup() {
-    Serial.begin(9600);
-    delay(1000);
+  Serial.begin(9600);
 
-    // Example: Forward Kinematics
-    double jointAngles[] = {0.1, 0.2, 0.3};
-    ForwardKinematicsResult fkResult = robot.forwardKinematics(jointAngles);
-    
-    // Print results
-    Serial.println("Forward Kinematics Result:");
-    Serial.print("Position: ");
-    Serial.print(fkResult.position.transpose());
-    Serial.println();
-    Serial.println("Orientation:");
-    Serial.print(fkResult.orientation);
-    Serial.println();
-    
-    // Example: Inverse Kinematics
-    Eigen::Vector3d targetPosition(2.0, 1.0, 0.5);
-    Eigen::Matrix3d targetOrientation = Eigen::Matrix3d::Identity();
-    InverseKinematicsResult ikResult = robot.inverseKinematics(targetPosition, targetOrientation);
+  // Define joint parameters for a simple 3-DOF robot
+  JointParameters joints[] = {
+    {1.0, 0.0, 0.0, 0.0},  // Joint 1
+    {1.0, 0.0, 0.0, 0.0},  // Joint 2
+    {1.0, 0.0, 0.0, 0.0}   // Joint 3
+  };
 
-    // Print results
-    Serial.println("Inverse Kinematics Result:");
-    if (ikResult.success) {
-        Serial.print("Computed Joint Angles: ");
-        for (int i = 0; i < 3; ++i) {
-            Serial.print(ikResult.jointAngles[i], 4);
-            if (i < 2) Serial.print(", ");
-        }
-        Serial.println();
-    } else {
-        Serial.println("Inverse Kinematics did not converge.");
+  // Create a RobotManipulator instance
+  RobotManipulator robot(joints, 3);
+
+  // Define joint angles for a specific robot configuration
+  double jointAngles[] = {0.1, 0.2, 0.3};
+
+  // Forward Kinematics
+  ForwardKinematicsResult fkResult = robot.forwardKinematics(jointAngles);
+
+  // Print Forward Kinematics results
+  Serial.println("Forward Kinematics Result:");
+  Serial.print("End-Effector Position: ");
+  Serial.print(fkResult.position[0]);
+  Serial.print(", ");
+  Serial.print(fkResult.position[1]);
+  Serial.print(", ");
+  Serial.println(fkResult.position[2]);
+  Serial.println("End-Effector Orientation:");
+  printMatrix(fkResult.orientation);
+
+  // Inverse Kinematics target position and orientation
+  Eigen::Vector3d targetPosition(1.5, 0.5, 1.0);
+  Eigen::Matrix3d targetOrientation;
+  targetOrientation << 1, 0, 0,
+                       0, 1, 0,
+                       0, 0, 1;
+
+  // Inverse Kinematics
+  InverseKinematicsResult ikResult = robot.inverseKinematics(targetPosition, targetOrientation);
+
+  // Print Inverse Kinematics results
+  Serial.println("\nInverse Kinematics Result:");
+  if (ikResult.success) {
+    Serial.print("Joint Angles: ");
+    for (int i = 0; i < 3; ++i) {
+      Serial.print(ikResult.jointAngles[i]);
+      Serial.print(", ");
     }
+    Serial.println();
+  } else {
+    Serial.println("Inverse Kinematics failed to converge.");
+  }
 }
 
 void loop() {
-    // Nothing to do in the loop
+  // Nothing to do in the loop for this example
 }
+
 ```
 This example demonstrates the usage of the RobotManipulator class with a 3-DOF robot, performing both forward kinematics and inverse kinematics.
 
