@@ -39,11 +39,11 @@ RobotManipulator::RobotManipulator(const JointParameters joints[], int numJoints
 // Forward kinematics implementation
 ForwardKinematicsResult RobotManipulator::forwardKinematics(const double jointAngles[]) {
     ForwardKinematicsResult result;
-    Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
+    ArduinoEigen::Matrix4d transform = ArduinoEigen::Matrix4d::Identity();
 
     // Iterate through each joint
     for (int i = 0; i < numJoints_; ++i) {
-        Eigen::Matrix4d tempTransform;
+        ArduinoEigen::Matrix4d tempTransform;
         // Compute the transformation matrix for the current joint
         computeTransform(tempTransform, jointParams_[i].a, jointParams_[i].alpha, jointParams_[i].d, jointAngles[i]);
         // Multiply the transformation matrix with the cumulative transformation
@@ -64,7 +64,7 @@ InverseKinematicsResult RobotManipulator::inverseKinematics(const Eigen::Vector3
     InverseKinematicsResult result;
     Eigen::Vector3d endEffectorPosition;
     Eigen::Matrix3d endEffectorOrientation;
-    Eigen::MatrixXd jacobian(6, numJoints_);
+    ArduinoEigen::MatrixXd jacobian(6, numJoints_);
     Eigen::VectorXd error(6);
 
     // Initialize result
@@ -84,45 +84,35 @@ InverseKinematicsResult RobotManipulator::inverseKinematics(const Eigen::Vector3
                                          targetOrientation.col(1).cross(endEffectorOrientation.col(1)) +
                                          targetOrientation.col(2).cross(endEffectorOrientation.col(2)));
 
-        // Check convergence
+        // Check for convergence
         if (isConverged(error, tolerance)) {
             result.success = true;
             return result;
         }
 
-        // Compute Jacobian
+        // Compute Jacobian matrix
         computeJacobian(endEffectorPosition, endEffectorOrientation, jacobian);
 
         // Update joint angles using Jacobian Transpose method
         result.jointAngles += jacobian.transpose() * error;
-
-        // Constrain joint angles to [-pi, pi]
-        for (int i = 0; i < numJoints_; ++i) {
-            result.jointAngles[i] = fmod(result.jointAngles[i] + M_PI, 2 * M_PI) - M_PI;
-        }
     }
 
     return result;
 }
 
 // Function to compute a transformation matrix for a given set of DH parameters
-void RobotManipulator::computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta) {
-    double cTheta = cos(theta);
-    double sTheta = sin(theta);
-    double cAlpha = cos(alpha);
-    double sAlpha = sin(alpha);
-
+void RobotManipulator::computeTransform(ArduinoEigen::Matrix4d& transform, double a, double alpha, double d, double theta) {
     // Populate the transformation matrix using DH parameters
-    transform << cTheta, -sTheta * cAlpha, sTheta * sAlpha, a * cTheta,
-                 sTheta, cTheta * cAlpha, -cTheta * sAlpha, a * sTheta,
-                 0, sAlpha, cAlpha, d,
+    transform << cos(theta), -sin(theta) * cos(alpha), sin(theta) * sin(alpha), a * cos(theta),
+                 sin(theta), cos(theta) * cos(alpha), -cos(theta) * sin(alpha), a * sin(theta),
+                 0, sin(alpha), cos(alpha), d,
                  0, 0, 0, 1;
 }
 
 // Function to compute the Jacobian matrix
 void RobotManipulator::computeJacobian(const Eigen::Vector3d& endEffectorPosition,
                                        const Eigen::Matrix3d& endEffectorOrientation,
-                                       Eigen::MatrixXd& jacobian) {
+                                       ArduinoEigen::MatrixXd& jacobian) {
     Eigen::Vector3d jointPosition;
     Eigen::Matrix3d jointOrientation;
 

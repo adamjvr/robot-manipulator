@@ -66,12 +66,12 @@ private:
     JointParameters* jointParams_; // Array to store joint parameters
 
     // Function to compute a transformation matrix for a given set of DH parameters
-    void computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta);
+    void computeTransform(ArduinoEigen::Matrix4d& transform, double a, double alpha, double d, double theta);
 
     // Function to compute the Jacobian matrix
     void computeJacobian(const Eigen::Vector3d& endEffectorPosition,
                          const Eigen::Matrix3d& endEffectorOrientation,
-                         Eigen::MatrixXd& jacobian);
+                         ArduinoEigen::MatrixXd& jacobian);
 
     // Function to check if the difference between two vectors is below a certain tolerance
     bool isConverged(const Eigen::VectorXd& error, double tolerance);
