@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef ROBOT_MANIPULATOR_H
 #define ROBOT_MANIPULATOR_H
 
-#include <Eigen.h>
+#include <ArduinoEigen.h>  // Include ArduinoEigen library for matrix operations
 
 // Struct to define joint parameters
 struct JointParameters {
@@ -77,3 +77,4 @@ private:
 };
 
 #endif // ROBOT_MANIPULATOR_H
+

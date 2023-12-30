@@ -144,5 +144,5 @@ bool RobotManipulator::isConverged(const Eigen::VectorXd& error, double toleranc
     return (norm < tolerance);
 }
 
-#endif // ROBOT_MANIPULATOR_H
+
 
