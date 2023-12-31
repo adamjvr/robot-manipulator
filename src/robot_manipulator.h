@@ -77,4 +77,3 @@ private:
 };
 
 #endif // ROBOT_MANIPULATOR_H
-

@@ -94,11 +94,14 @@ InverseKinematicsResult RobotManipulator::inverseKinematics(const Eigen::Vector3
         computeJacobian(endEffectorPosition, endEffectorOrientation, jacobian);
 
         // Update joint angles using Jacobian Transpose method
-        result.jointAngles += jacobian.transpose() * error;
+        for (int i = 0; i < numJoints_; ++i) {
+            result.jointAngles[i] += jacobian.transpose().row(i) * error;
+        }
     }
 
     return result;
 }
+
 
 // Function to compute a transformation matrix for a given set of DH parameters
 void RobotManipulator::computeTransform(Eigen::Matrix4d& transform, double a, double alpha, double d, double theta) {
@@ -143,6 +146,3 @@ bool RobotManipulator::isConverged(const Eigen::VectorXd& error, double toleranc
     // Check if the norm is below the specified tolerance
     return (norm < tolerance);
 }
-
-
-
